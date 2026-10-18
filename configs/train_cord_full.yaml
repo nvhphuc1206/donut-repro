@@ -1,0 +1,33 @@
+# B0 – Task 1.2: full fine-tune từ donut-base trên CORD-v2, cấu hình rút gọn cho GPU 16 GB (T4/P100)
+# Config gốc (clovaai/donut config/train_cord.yaml): 1280x960, lr 3e-5, ~30 epoch, batch 8, A100.
+run_id: B0_full_1280
+model_name_or_path: naver-clova-ix/donut-base
+dataset: naver-clova-ix/cord-v2
+task_token: "<s_cord-v2>"
+input_size: [1280, 960]      # [H, W]; nếu OOM -> [960, 720] và ghi rõ trong báo cáo
+align_long_axis: false
+max_length: 768
+
+epochs: 12                   # 10–15 thay vì 30
+batch_size: 1
+grad_accum: 8                # batch hiệu dụng = 8
+lr: 3.0e-5
+weight_decay: 0.0
+warmup_steps: 300
+scheduler: cosine
+max_grad_norm: 1.0
+fp16: true                   # T4 không hỗ trợ bf16
+gradient_checkpointing: true
+num_workers: 2               # Windows: đặt 0
+seed: 42
+
+val_every: 1
+val_limit: null              # null = toàn bộ 100 ảnh validation
+val_batch_size: 4
+
+output_dir: null             # mặc định outputs/<run_id>; Colab: trỏ vào Google Drive
+resume: true
+save_optimizer: true
+lora: null
+augment: null
+notes: "full FT, 1280x960, 12 epoch, bs 1x8, fp16"

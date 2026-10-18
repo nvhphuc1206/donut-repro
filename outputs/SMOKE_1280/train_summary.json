@@ -1,0 +1,19 @@
+{
+  "id": "SMOKE_1280",
+  "stage": "train",
+  "config": "configs/smoke_test.yaml",
+  "model": "naver-clova-ix/donut-base",
+  "input_size": "1280x960",
+  "epochs": 1,
+  "trainable_params_M": 201.91,
+  "effective_trainable_params_M": 201.91,
+  "peak_vram_gb": 5.2,
+  "train_hours": 0.03,
+  "sec_per_epoch": 111.0,
+  "best_epoch": 1,
+  "val_f1": 0.0,
+  "val_ted_acc": 0.0,
+  "gpu": "NVIDIA GeForce RTX 5060",
+  "time": "2026-10-16 20:20:13",
+  "notes": "smoke test"
+}

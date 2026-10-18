@@ -1,0 +1,21 @@
+# I1-b – fine-tune ngắn ở độ phân giải thấp hơn 960x720 (so với B0 ở 1280x960)
+run_id: I1b_full_960
+model_name_or_path: naver-clova-ix/donut-base
+dataset: naver-clova-ix/cord-v2
+task_token: "<s_cord-v2>"
+input_size: [960, 720]
+align_long_axis: false
+max_length: 768
+epochs: 12
+batch_size: 2
+grad_accum: 4
+lr: 3.0e-5
+warmup_steps: 300
+scheduler: cosine
+fp16: true
+gradient_checkpointing: true
+num_workers: 2
+seed: 42
+val_batch_size: 4
+output_dir: null
+notes: "full FT, 960x720, 12 epoch, bs 2x4, fp16"

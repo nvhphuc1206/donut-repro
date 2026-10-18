@@ -1,0 +1,37 @@
+
+================================================================================
+[2026-10-16 20:02:15] D:\Study\Data_science_K35\MDL21_Advanced-Computer-Vision\final_project\donut\src\train.py --config configs/smoke_test.yaml --set run_id=SMOKE_1280 output_dir=outputs/SMOKE_1280 input_size=[1280,960] num_workers=0
+================================================================================
+[log] outputs/SMOKE_1280\train.log
+Run SMOKE_1280 | GPU: NVIDIA GeForce RTX 5060 | output: outputs/SMOKE_1280
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+The new embeddings will be initialized from a multivariate normal distribution that has old embeddings' mean and covariance. As described in this article: https://nlp.stanford.edu/~johnhew/vocab-expansion.html. To disable this, use `mean_resizing=False`
+Đã thêm 55 special tokens (vocab = 57580), decoder_start = <s_cord-v2>
+Tham số: tổng 201.9M | train 201.91M | train hiệu dụng 201.91M
+epoch 1/1:   0%|          | 0/40 [00:00<?, ?it/s]`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+epoch 1/1:   8%|▊         | 3/40 [00:06<01:06,  1.80s/it, loss=16.5095, lr=0.00e+00]D:\Study\Data_science_K35\MDL21_Advanced-Computer-Vision\final_project\donut\src\train.py:284: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scheduler.step()
+epoch 1/1: 100%|██████████| 40/40 [01:50<00:00,  2.77s/it, loss=14.0212, lr=3.00e-05]
+val: 100%|██████████| 2/2 [00:13<00:00,  6.74s/it]
+[epoch 1] loss=14.0212 val F1=0.0000 TED=0.0000 (1.8 phút, VRAM 5.2 GB)
+   -> checkpoint tốt nhất mới (epoch 1)
+
+===== HUẤN LUYỆN XONG =====
+                            id: SMOKE_1280
+                         stage: train
+                        config: configs/smoke_test.yaml
+                         model: naver-clova-ix/donut-base
+                    input_size: 1280x960
+                        epochs: 1
+            trainable_params_M: 201.91
+  effective_trainable_params_M: 201.91
+                  peak_vram_gb: 5.2
+                   train_hours: 0.03
+                 sec_per_epoch: 111.0
+                    best_epoch: 1
+                        val_f1: 0.0
+                   val_ted_acc: 0.0
+                           gpu: NVIDIA GeForce RTX 5060
+                          time: 2026-10-16 20:20:13
+                         notes: smoke test
+Checkpoint tốt nhất: outputs/SMOKE_1280\best

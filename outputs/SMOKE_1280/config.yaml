@@ -1,0 +1,35 @@
+run_id: SMOKE_1280
+model_name_or_path: naver-clova-ix/donut-base
+dataset: naver-clova-ix/cord-v2
+train_split: train
+val_split: validation
+task_token: <s_cord-v2>
+input_size:
+- 1280
+- 960
+align_long_axis: false
+max_length: 768
+epochs: 1
+batch_size: 1
+grad_accum: 4
+lr: 3.0e-05
+weight_decay: 0.0
+warmup_steps: 10
+scheduler: cosine
+max_grad_norm: 1.0
+fp16: true
+gradient_checkpointing: true
+num_workers: 0
+seed: 42
+log_every: 10
+val_every: 1
+train_limit: 40
+val_limit: 8
+val_batch_size: 4
+output_dir: outputs/SMOKE_1280
+resume: true
+save_optimizer: false
+lora: null
+augment: null
+runs_csv: results/smoke_runs.csv
+notes: smoke test

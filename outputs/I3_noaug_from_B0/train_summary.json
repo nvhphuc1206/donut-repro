@@ -1,0 +1,19 @@
+{
+  "id": "I3_noaug_from_B0",
+  "stage": "train",
+  "config": "configs/train_cord_noaug_control.yaml",
+  "model": "outputs/B0_full_1280/best",
+  "input_size": "1280x960",
+  "epochs": 4,
+  "trainable_params_M": 201.91,
+  "effective_trainable_params_M": 201.91,
+  "peak_vram_gb": 5.21,
+  "train_hours": 0.44,
+  "sec_per_epoch": 400.3,
+  "best_epoch": 3,
+  "val_f1": 0.8095,
+  "val_ted_acc": 0.8986,
+  "gpu": "NVIDIA GeForce RTX 5060",
+  "time": "2026-10-17 17:34:15",
+  "notes": "B0 + 4 epoch không augmentation (đối chứng)"
+}

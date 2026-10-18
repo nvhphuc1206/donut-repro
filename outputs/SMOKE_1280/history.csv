@@ -1,0 +1,2 @@
+epoch,train_loss,lr,epoch_seconds,peak_vram_gb,val_f1,val_ted_acc
+1,14.02124,3e-05,111.0,5.2,0.0,0.0

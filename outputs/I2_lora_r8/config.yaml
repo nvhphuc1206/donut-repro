@@ -1,0 +1,44 @@
+run_id: I2_lora_r8
+model_name_or_path: naver-clova-ix/donut-base
+dataset: naver-clova-ix/cord-v2
+train_split: train
+val_split: validation
+task_token: <s_cord-v2>
+input_size:
+- 1280
+- 960
+align_long_axis: false
+max_length: 768
+sort_json_key: false
+epochs: 12
+batch_size: 1
+grad_accum: 8
+lr: 0.0001
+weight_decay: 0.0
+warmup_steps: 300
+scheduler: cosine
+max_grad_norm: 1.0
+fp16: true
+gradient_checkpointing: true
+num_workers: 0
+seed: 42
+log_every: 10
+val_every: 1
+train_limit: null
+val_limit: null
+val_batch_size: 4
+output_dir: outputs/I2_lora_r8
+resume: true
+save_optimizer: true
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_decoder: true
+  target_encoder_stages:
+  - 2
+  - 3
+  train_embeddings: new_rows
+augment: null
+runs_csv: results/runs.csv
+notes: LoRA r=8 a=16, decoder q/v + Swin stage3-4 query/value

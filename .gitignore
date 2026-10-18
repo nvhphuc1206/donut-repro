@@ -1,0 +1,50 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# ===== Data (tải lại từ HF Hub / tạo lại bằng src/make_noisy_test.py) =====
+data/
+*.arrow
+*.parquet
+
+# ===== Checkpoint / trọng số model (mỗi file 0.2–2.3 GB, vượt giới hạn 100 MB của GitHub) =====
+*.pt
+*.pt.tmp
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+outputs/**/best/
+outputs/**/last/
+
+# Giữ lại metadata của từng run trong outputs/: config.yaml, train.log, history.csv,
+# train_steps.csv, train_summary.json
+
+# ===== Kết quả của các run bị lỗi loss (đã train lại, không dùng trong báo cáo) =====
+outputs/_invalid_lossbug/
+results/_invalid_lossbug/
+
+# ===== Cache / log của công cụ =====
+.cache/
+hf_cache/
+wandb/
+lightning_logs/
+runs/
+*.tmp
+
+# ===== IDE / OS =====
+.vscode/
+.idea/
+.claude/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+results
+report

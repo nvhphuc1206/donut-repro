@@ -1,0 +1,2 @@
+global_step,epoch,loss,lr
+10,1,14.02124,3e-05

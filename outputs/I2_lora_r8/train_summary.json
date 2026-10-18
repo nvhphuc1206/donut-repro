@@ -1,0 +1,19 @@
+{
+  "id": "I2_lora_r8",
+  "stage": "train",
+  "config": "configs/train_cord_lora.yaml",
+  "model": "naver-clova-ix/donut-base",
+  "input_size": "1280x960",
+  "epochs": 12,
+  "trainable_params_M": 59.52,
+  "effective_trainable_params_M": 0.61,
+  "peak_vram_gb": 3.1,
+  "train_hours": 0.77,
+  "sec_per_epoch": 231.6,
+  "best_epoch": 11,
+  "val_f1": 0.6884,
+  "val_ted_acc": 0.7655,
+  "gpu": "NVIDIA GeForce RTX 5060",
+  "time": "2026-10-17 16:30:00",
+  "notes": "LoRA r=8 a=16, decoder q/v + Swin stage3-4 query/value"
+}

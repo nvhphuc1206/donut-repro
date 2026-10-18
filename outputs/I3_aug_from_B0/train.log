@@ -1,0 +1,43 @@
+
+================================================================================
+[2026-10-17 16:31:06] D:\Study\Data_science_K35\MDL21_Advanced-Computer-Vision\final_project\donut\src\train.py --config configs/train_cord_aug.yaml --set run_id=I3_aug_from_B0 output_dir=outputs/I3_aug_from_B0 input_size=[1280,960] model_name_or_path=outputs/B0_full_1280/best num_workers=0
+================================================================================
+[log] outputs/I3_aug_from_B0\train.log
+Run I3_aug_from_B0 | GPU: NVIDIA GeForce RTX 5060 | output: outputs/I3_aug_from_B0
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+Đã thêm 0 special tokens (vocab = 57580), decoder_start = <s_cord-v2>
+Tham số: tổng 201.9M | train 201.91M | train hiệu dụng 201.91M
+epoch 1/4: 100%|██████████| 800/800 [06:33<00:00,  2.03it/s, loss=0.1136, lr=9.50e-06]
+val: 100%|██████████| 25/25 [00:46<00:00,  1.84s/it]
+[epoch 1] loss=0.1136 val F1=0.8003 TED=0.8821 (6.6 phút, VRAM 5.21 GB)
+   -> checkpoint tốt nhất mới (epoch 1)
+epoch 2/4: 100%|██████████| 800/800 [07:17<00:00,  1.83it/s, loss=0.1078, lr=6.11e-06]
+val: 100%|██████████| 25/25 [00:46<00:00,  1.84s/it]
+[epoch 2] loss=0.1078 val F1=0.8089 TED=0.8706 (7.3 phút, VRAM 5.21 GB)
+epoch 3/4: 100%|██████████| 800/800 [07:15<00:00,  1.84it/s, loss=0.0945, lr=1.88e-06]
+val: 100%|██████████| 25/25 [00:45<00:00,  1.84s/it]
+[epoch 3] loss=0.0945 val F1=0.8086 TED=0.8916 (7.3 phút, VRAM 5.21 GB)
+   -> checkpoint tốt nhất mới (epoch 3)
+epoch 4/4: 100%|██████████| 800/800 [06:55<00:00,  1.93it/s, loss=0.0888, lr=0.00e+00]
+val: 100%|██████████| 25/25 [00:35<00:00,  1.42s/it]
+[epoch 4] loss=0.0888 val F1=0.8105 TED=0.8886 (6.9 phút, VRAM 5.21 GB)
+
+===== HUẤN LUYỆN XONG =====
+                            id: I3_aug_from_B0
+                         stage: train
+                        config: configs/train_cord_aug.yaml
+                         model: outputs/B0_full_1280/best
+                    input_size: 1280x960
+                        epochs: 4
+            trainable_params_M: 201.91
+  effective_trainable_params_M: 201.91
+                  peak_vram_gb: 5.21
+                   train_hours: 0.47
+                 sec_per_epoch: 420.3
+                    best_epoch: 3
+                        val_f1: 0.8086
+                   val_ted_acc: 0.8916
+                           gpu: NVIDIA GeForce RTX 5060
+                          time: 2026-10-17 17:03:25
+                         notes: B0 + 4 epoch có augmentation
+Checkpoint tốt nhất: outputs/I3_aug_from_B0\best

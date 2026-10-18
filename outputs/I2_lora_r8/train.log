@@ -1,0 +1,77 @@
+
+================================================================================
+[2026-10-17 15:34:28] D:\Study\Data_science_K35\MDL21_Advanced-Computer-Vision\final_project\donut\src\train.py --config configs/train_cord_lora.yaml --set run_id=I2_lora_r8 output_dir=outputs/I2_lora_r8 input_size=[1280,960] num_workers=0
+================================================================================
+[log] outputs/I2_lora_r8\train.log
+Run I2_lora_r8 | GPU: NVIDIA GeForce RTX 5060 | output: outputs/I2_lora_r8
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+The new embeddings will be initialized from a multivariate normal distribution that has old embeddings' mean and covariance. As described in this article: https://nlp.stanford.edu/~johnhew/vocab-expansion.html. To disable this, use `mean_resizing=False`
+Đã thêm 55 special tokens (vocab = 57580), decoder_start = <s_cord-v2>
+trainable params: 59,518,976 || all params: 202,465,400 || trainable%: 29.3971
+Tham số: tổng 202.5M | train 59.52M | train hiệu dụng 0.61M
+epoch 1/12: 100%|██████████| 800/800 [04:43<00:00,  2.82it/s, loss=13.3609, lr=3.33e-05]
+val: 100%|██████████| 25/25 [00:15<00:00,  1.63it/s]
+[epoch 1] loss=13.3609 val F1=0.0000 TED=0.0000 (4.7 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 1)
+epoch 2/12: 100%|██████████| 800/800 [03:48<00:00,  3.50it/s, loss=8.2432, lr=6.67e-05]
+val: 100%|██████████| 25/25 [00:29<00:00,  1.18s/it]
+[epoch 2] loss=8.2431 val F1=0.0000 TED=0.0000 (3.8 phút, VRAM 3.1 GB)
+epoch 3/12: 100%|██████████| 800/800 [03:47<00:00,  3.52it/s, loss=3.9833, lr=1.00e-04]
+val: 100%|██████████| 25/25 [01:32<00:00,  3.68s/it]
+[epoch 3] loss=3.9834 val F1=0.0000 TED=0.1621 (3.8 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 3)
+epoch 4/12: 100%|██████████| 800/800 [03:47<00:00,  3.52it/s, loss=1.2775, lr=9.70e-05]
+val: 100%|██████████| 25/25 [00:45<00:00,  1.82s/it]
+[epoch 4] loss=1.2775 val F1=0.3362 TED=0.4093 (3.8 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 4)
+epoch 5/12: 100%|██████████| 800/800 [03:46<00:00,  3.53it/s, loss=0.7033, lr=8.83e-05]
+val: 100%|██████████| 25/25 [00:44<00:00,  1.76s/it]
+[epoch 5] loss=0.7034 val F1=0.4481 TED=0.4889 (3.8 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 5)
+epoch 6/12: 100%|██████████| 800/800 [03:46<00:00,  3.53it/s, loss=0.5334, lr=7.50e-05]
+val: 100%|██████████| 25/25 [00:34<00:00,  1.38s/it]
+[epoch 6] loss=0.5334 val F1=0.5836 TED=0.6619 (3.8 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 6)
+epoch 7/12: 100%|██████████| 800/800 [03:45<00:00,  3.54it/s, loss=0.4507, lr=5.87e-05]
+val: 100%|██████████| 25/25 [00:32<00:00,  1.30s/it]
+[epoch 7] loss=0.4507 val F1=0.6387 TED=0.6987 (3.8 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 7)
+epoch 8/12: 100%|██████████| 800/800 [03:46<00:00,  3.53it/s, loss=0.3971, lr=4.13e-05]
+val: 100%|██████████| 25/25 [00:33<00:00,  1.36s/it]
+[epoch 8] loss=0.3971 val F1=0.6266 TED=0.7346 (3.8 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 8)
+epoch 9/12: 100%|██████████| 800/800 [03:47<00:00,  3.52it/s, loss=0.3734, lr=2.50e-05]
+val: 100%|██████████| 25/25 [00:34<00:00,  1.40s/it]
+[epoch 9] loss=0.3735 val F1=0.6509 TED=0.7318 (3.8 phút, VRAM 3.1 GB)
+epoch 10/12: 100%|██████████| 800/800 [03:45<00:00,  3.54it/s, loss=0.3536, lr=1.17e-05]
+val: 100%|██████████| 25/25 [00:31<00:00,  1.25s/it]
+[epoch 10] loss=0.3536 val F1=0.6720 TED=0.7503 (3.8 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 10)
+epoch 11/12: 100%|██████████| 800/800 [03:46<00:00,  3.54it/s, loss=0.3484, lr=3.02e-06]
+val: 100%|██████████| 25/25 [00:31<00:00,  1.27s/it]
+[epoch 11] loss=0.3483 val F1=0.6884 TED=0.7655 (3.8 phút, VRAM 3.1 GB)
+   -> checkpoint tốt nhất mới (epoch 11)
+epoch 12/12: 100%|██████████| 800/800 [03:47<00:00,  3.52it/s, loss=0.3401, lr=0.00e+00]
+val: 100%|██████████| 25/25 [00:30<00:00,  1.23s/it]
+[epoch 12] loss=0.3401 val F1=0.6828 TED=0.7622 (3.8 phút, VRAM 3.1 GB)
+Đã merge LoRA và lưu outputs/I2_lora_r8\best
+
+===== HUẤN LUYỆN XONG =====
+                            id: I2_lora_r8
+                         stage: train
+                        config: configs/train_cord_lora.yaml
+                         model: naver-clova-ix/donut-base
+                    input_size: 1280x960
+                        epochs: 12
+            trainable_params_M: 59.52
+  effective_trainable_params_M: 0.61
+                  peak_vram_gb: 3.1
+                   train_hours: 0.77
+                 sec_per_epoch: 231.6
+                    best_epoch: 11
+                        val_f1: 0.6884
+                   val_ted_acc: 0.7655
+                           gpu: NVIDIA GeForce RTX 5060
+                          time: 2026-10-17 16:30:00
+                         notes: LoRA r=8 a=16, decoder q/v + Swin stage3-4 query/value
+Checkpoint tốt nhất: outputs/I2_lora_r8\best
