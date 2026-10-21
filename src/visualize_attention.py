@@ -1,10 +1,10 @@
-"""Task 2.2 – Trực quan hóa cross-attention của decoder lên ảnh (minh chứng "định vị chữ ngầm").
+"""Phân tích – trực quan hóa cross-attention của decoder lên ảnh (minh chứng "định vị chữ ngầm").
 
 Gom các token thuộc cùng một giá trị field (vd. nội dung trong <s_nm>…</s_nm>), lấy trung bình
 cross-attention (trung bình head; lớp cuối hoặc trung bình các lớp) -> lưới (H/32, W/32) -> chồng lên ảnh.
 
     python -m src.visualize_attention --indices 0 1 2 --keys nm price total_price
-Output: results/attention/sample{idx}_*.png
+Output: results/analysis/attention/sample{idx}_*.png
 """
 import argparse
 import math
@@ -101,7 +101,7 @@ def main():
     ap.add_argument("--layer", default="last", help="last | mean | chỉ số lớp (0..3)")
     ap.add_argument("--input_size", type=int, nargs=2, metavar=("H", "W"))
     ap.add_argument("--device", default="cuda")
-    ap.add_argument("--out_dir", default="results/attention")
+    ap.add_argument("--out_dir", default="results/analysis/attention")
     args = ap.parse_args()
     utils.start_log("results/logs/visualize_attention.log")
 

@@ -73,6 +73,30 @@ def add_tokens(tokenizer, tokens: List[str]) -> int:
         )
 
 
+# Chuẩn hóa ảnh: code gốc clovaai/donut dùng mean/std ImageNet (timm IMAGENET_DEFAULT_MEAN/STD),
+# còn preprocessor_config.json của các checkpoint Donut trên HF Hub ghi mean = std = 0.5.
+IMAGE_NORMS = {
+    "imagenet": ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    "hf": ([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+}
+
+
+def set_image_norm(processor, norm: Optional[str]):
+    """norm: "imagenet" (giống code gốc) | "hf" (giống preprocessor_config trên Hub) | None (giữ nguyên)."""
+    if norm:
+        mean, std = IMAGE_NORMS[norm]
+        processor.image_processor.image_mean = list(mean)
+        processor.image_processor.image_std = list(std)
+
+
+def image_norm_name(processor) -> str:
+    mean = [round(float(x), 3) for x in processor.image_processor.image_mean]
+    for name, (m, _) in IMAGE_NORMS.items():
+        if mean == [round(x, 3) for x in m]:
+            return name
+    return str(mean)
+
+
 def set_input_size(processor, input_size, align_long_axis: Optional[bool] = None):
     """input_size = [H, W] (giống config gốc: [1280, 960] = cao 1280, rộng 960)."""
     h, w = int(input_size[0]), int(input_size[1])
@@ -91,12 +115,11 @@ class DonutDataset(Dataset):
     decoder_start_token_id (= <s_cord-v2>) ở đầu -> prompt không bị tính loss.
     """
 
-    def __init__(self, hf_ds, processor, max_length: int, train: bool, augment=None, sort_json_key: bool = False):
+    def __init__(self, hf_ds, processor, max_length: int, train: bool, sort_json_key: bool = False):
         self.ds = hf_ds
         self.processor = processor
         self.max_length = max_length
         self.train = train
-        self.augment = augment
         eos = processor.tokenizer.eos_token
         self.targets = [
             [json2token(p, sort_json_key) + eos for p in get_gt_parses(g)] for g in hf_ds["ground_truth"]
@@ -108,8 +131,6 @@ class DonutDataset(Dataset):
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         sample = self.ds[idx]
         image = sample["image"].convert("RGB")
-        if self.augment is not None:
-            image = self.augment(image)
         pixel_values = self.processor.image_processor(
             image, random_padding=self.train, return_tensors="pt"
         ).pixel_values[0]

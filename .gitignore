@@ -7,7 +7,7 @@ __pycache__/
 venv/
 env/
 
-# ===== Data (tải lại từ HF Hub / tạo lại bằng src/make_noisy_test.py) =====
+# ===== Data (tải lại từ HF Hub / tạo lại bằng src.make_far_test, src.make_external_test) =====
 data/
 *.arrow
 *.parquet
@@ -25,9 +25,8 @@ outputs/**/last/
 # Giữ lại metadata của từng run trong outputs/: config.yaml, train.log, history.csv,
 # train_steps.csv, train_summary.json
 
-# ===== Kết quả của các run bị lỗi loss (đã train lại, không dùng trong báo cáo) =====
-outputs/_invalid_lossbug/
-results/_invalid_lossbug/
+# ===== Lưu trữ các thí nghiệm cũ không còn dùng (giữ trên máy, không đưa lên git) =====
+_archive/
 
 # ===== Cache / log của công cụ =====
 .cache/
@@ -46,5 +45,4 @@ runs/
 Thumbs.db
 desktop.ini
 
-results
-report
+results/

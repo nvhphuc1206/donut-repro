@@ -75,7 +75,7 @@ def ensure_dir(path: str) -> str:
 
 
 def load_config(path: str, overrides: Optional[Iterable[str]] = None) -> Dict[str, Any]:
-    """Đọc YAML, rồi ghi đè bằng các cặp key=value (hỗ trợ key lồng: lora.r=16)."""
+    """Đọc YAML, rồi ghi đè bằng các cặp key=value (hỗ trợ key lồng: a.b=1)."""
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     for item in overrides or []:

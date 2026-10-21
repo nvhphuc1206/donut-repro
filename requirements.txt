@@ -1,15 +1,15 @@
-# torch / torchvision: dùng bản có sẵn trên Colab/Kaggle (đã kèm CUDA), KHÔNG cài lại.
+# torch / torchvision: dùng bản có sẵn kèm CUDA (Colab/Kaggle hoặc cài theo pytorch.org), KHÔNG cài lại.
 transformers>=4.45,<5.0
 datasets>=2.19
 accelerate>=0.30
 sentencepiece
 protobuf
-peft>=0.11
-zss                 # Tree Edit Distance (Zhang-Shasha) cho TED accuracy
-nltk                # edit_distance dùng trong evaluator gốc
+zss                     # Tree Edit Distance (Zhang-Shasha) cho TED accuracy
+nltk                    # edit_distance dùng trong evaluator gốc
 pyyaml
 pandas
 matplotlib
 tqdm
-hf_xet              # tải nhanh hơn từ HF Hub (Xet storage)
+hf_xet                  # tải nhanh hơn từ HF Hub (Xet storage)
 pillow
+opencv-python-headless  # tiền xử lý cắt vùng chữ (src/preprocess.py)

@@ -1,10 +1,11 @@
-"""Fine-tune Donut trên CORD (Task 1.2, I1-b, I2 LoRA, I3 augmentation).
+"""Fine-tune Donut (full fine-tune) trên CORD-v2 theo công thức gốc của clovaai/donut.
 
-    python -m src.train --config configs/train_cord_full.yaml
-    python -m src.train --config configs/train_cord_full.yaml --set output_dir=/content/drive/MyDrive/donut/outputs/B0 epochs=10
+    python -m src.train --config configs/train_cord_reproduce.yaml
+    python -m src.train --config configs/train_cord_reproduce.yaml --set train_limit=8 epochs=1   # chạy thử
 
 - Checkpoint `last.pt` được ghi mỗi epoch -> chạy lại cùng lệnh để resume (resume theo epoch).
-- Checkpoint tốt nhất theo TED Acc trên val được lưu ở `<output_dir>/best` (định dạng HF, dùng thẳng cho evaluate.py).
+- Checkpoint tốt nhất theo val (NED nhỏ nhất như code gốc, hoặc TED lớn nhất) lưu ở `<output_dir>/best`
+  (định dạng HF, dùng thẳng cho evaluate.py).
 """
 import argparse
 import math
@@ -24,12 +25,14 @@ from transformers import (
 )
 
 from src import utils
-from src.augment import TrainAugment
-from src.data import DonutDataset, add_tokens, collate_train, collect_task_tokens, load_split, set_input_size
+from src.data import (DonutDataset, add_tokens, collate_train, collect_task_tokens, load_split, set_image_norm,
+                      set_input_size)
 from src.evaluate import evaluate_dataset
 
+# Mặc định = công thức gốc (config/train_cord.yaml + lightning_module.py của clovaai/donut); xem
+# configs/train_cord_reproduce.yaml để biết từng thông số tương ứng với code gốc.
 DEFAULTS = dict(
-    run_id="B0",
+    run_id="donut_cord_reproduce",
     model_name_or_path="naver-clova-ix/donut-base",
     dataset="naver-clova-ix/cord-v2",
     train_split="train",
@@ -39,7 +42,10 @@ DEFAULTS = dict(
     align_long_axis=False,
     max_length=768,
     sort_json_key=False,
-    epochs=12,
+    image_norm="imagenet",     # imagenet: giống code gốc | hf: mean=std=0.5 (preprocessor_config trên Hub)
+    loss_reduction="token",    # token: TB theo token trên cả batch hiệu dụng (code gốc) | sample: TB từng micro-batch
+    select_metric="ned",       # ned: normalized edit distance nhỏ nhất (code gốc) | ted: TED val lớn nhất
+    epochs=30,
     batch_size=1,
     grad_accum=8,
     lr=3.0e-5,
@@ -50,17 +56,15 @@ DEFAULTS = dict(
     fp16=True,
     gradient_checkpointing=True,
     num_workers=2,
-    seed=42,
+    seed=2022,
     log_every=10,
-    val_every=1,
+    val_every=3,
     train_limit=None,
     val_limit=None,
-    val_batch_size=4,
+    val_batch_size=1,
     output_dir=None,
     resume=True,
     save_optimizer=True,
-    lora=None,
-    augment=None,
     runs_csv="results/runs.csv",
     notes="",
 )
@@ -77,6 +81,7 @@ def build_model_and_processor(cfg):
     config.decoder.max_length = cfg["max_length"]
     model = VisionEncoderDecoderModel.from_pretrained(path, config=config)
     set_input_size(processor, cfg["input_size"], cfg.get("align_long_axis"))
+    set_image_norm(processor, cfg.get("image_norm"))
     return model, processor
 
 
@@ -91,54 +96,6 @@ def setup_special_tokens(model, processor, train_hf, task_token):
     model.config.decoder_start_token_id = tok.convert_tokens_to_ids(task_token)
     print(f"Đã thêm {n_added} special tokens (vocab = {len(tok)}), decoder_start = {task_token}")
     return n_added, first_new_id
-
-
-def embedding_params(model):
-    """Ma trận embedding của decoder (+ lm_head nếu không bị tie)."""
-    emb = model.decoder.get_input_embeddings().weight
-    params = [emb]
-    out = model.decoder.get_output_embeddings()
-    if out is not None and out.weight is not emb:
-        params.append(out.weight)
-    return params
-
-
-def apply_lora(model, lcfg, first_new_id):
-    """LoRA cho q/v của decoder (self + cross attention) và (tuỳ chọn) query/value của Swin stage 3–4.
-
-    Embedding: mặc định chỉ học các hàng của special token mới (`train_embeddings: new_rows`), tương đương
-    modules_to_save nhưng giữ được weight tying embed_tokens <-> lm_head khi merge/lưu.
-    """
-    from peft import LoraConfig, get_peft_model
-
-    patterns = []
-    if lcfg.get("target_decoder", True):
-        patterns.append(r"decoder\.model\.decoder\.layers\.\d+\.(?:self_attn|encoder_attn)\.(?:q_proj|v_proj)")
-    stages = lcfg.get("target_encoder_stages") or []
-    if stages:
-        st = "|".join(str(s) for s in stages)
-        patterns.append(rf"encoder\.encoder\.layers\.(?:{st})\.blocks\.\d+\.attention\.self\.(?:query|value)")
-    target = "|".join(f"(?:{p})" for p in patterns)
-    peft_cfg = LoraConfig(
-        r=lcfg.get("r", 8),
-        lora_alpha=lcfg.get("alpha", 16),
-        lora_dropout=lcfg.get("dropout", 0.05),
-        target_modules=target,
-        bias="none",
-    )
-    model = get_peft_model(model, peft_cfg)
-
-    mode = lcfg.get("train_embeddings", "new_rows")  # new_rows | full | frozen
-    extra_effective = 0
-    if mode in ("new_rows", "full"):
-        for p in embedding_params(model.get_base_model()):
-            p.requires_grad_(True)
-            if mode == "new_rows":
-                mask = torch.zeros(p.shape[0], 1)
-                mask[first_new_id:] = 1.0
-                p.register_hook(lambda g, m=mask: g * m.to(g.device, g.dtype))
-                extra_effective += max(p.shape[0] - first_new_id, 0) * p.shape[1]
-    return model, mode, extra_effective
 
 
 def trainable_state(model):
@@ -183,7 +140,7 @@ def shift_right(labels: torch.Tensor, pad_id: int, start_id: int) -> torch.Tenso
     return dec
 
 
-def seq2seq_loss(model, pixel_values, labels, pad_id, start_id):
+def seq2seq_loss(model, pixel_values, labels, pad_id, start_id, reduction: str = "mean"):
     """Tự tính cross-entropy: logits[t] dự đoán labels[t] (KHÔNG dịch thêm).
 
     Không dùng `model(..., labels=labels).loss`: từ transformers ~4.46, VisionEncoderDecoderModel gọi
@@ -194,7 +151,7 @@ def seq2seq_loss(model, pixel_values, labels, pad_id, start_id):
     out = model(pixel_values=pixel_values, decoder_input_ids=shift_right(labels, pad_id, start_id), use_cache=False)
     logits = out.logits
     return torch.nn.functional.cross_entropy(
-        logits.reshape(-1, logits.size(-1)).float(), labels.reshape(-1), ignore_index=-100
+        logits.reshape(-1, logits.size(-1)).float(), labels.reshape(-1), ignore_index=-100, reduction=reduction
     )
 
 
@@ -204,7 +161,7 @@ def seq2seq_loss(model, pixel_values, labels, pad_id, start_id):
 def main():
     ap = argparse.ArgumentParser(description="Fine-tune Donut trên CORD")
     ap.add_argument("--config", required=True)
-    ap.add_argument("--set", nargs="*", default=[], help="Ghi đè config: key=value (vd: epochs=10 lora.r=16)")
+    ap.add_argument("--set", nargs="*", default=[], help="Ghi đè config: key=value (vd: epochs=10 seed=1)")
     args = ap.parse_args()
 
     cfg = {**DEFAULTS, **utils.load_config(args.config, args.set)}
@@ -223,7 +180,7 @@ def main():
     train_hf = load_split(cfg["dataset"], cfg["train_split"])
     val_hf = load_split(cfg["dataset"], cfg["val_split"])
     model, processor = build_model_and_processor(cfg)
-    _, first_new_id = setup_special_tokens(model, processor, train_hf, cfg["task_token"])
+    setup_special_tokens(model, processor, train_hf, cfg["task_token"])
     if cfg["train_limit"]:  # chỉ dùng cho smoke test
         train_hf = train_hf.select(range(min(int(cfg["train_limit"]), len(train_hf))))
 
@@ -233,28 +190,14 @@ def main():
         except TypeError:
             model.gradient_checkpointing_enable()
 
-    lora_cfg = cfg.get("lora")
-    emb_mode, extra_effective = None, 0
-    if lora_cfg:
-        model, emb_mode, extra_effective = apply_lora(model, lora_cfg, first_new_id)
-        model.print_trainable_parameters()
     pad_id = processor.tokenizer.pad_token_id
     start_id = processor.tokenizer.convert_tokens_to_ids(cfg["task_token"])
-    gen_model = model.get_base_model() if lora_cfg else model  # model dùng để generate khi validate
     model.to(device)
 
     total_params, trainable_params = utils.count_parameters(model)
-    if lora_cfg and emb_mode == "new_rows":
-        emb_numel = sum(p.numel() for p in embedding_params(gen_model))
-        effective_trainable = trainable_params - emb_numel + extra_effective
-    else:
-        effective_trainable = trainable_params
-    print(f"Tham số: tổng {total_params/1e6:.1f}M | train {trainable_params/1e6:.2f}M "
-          f"| train hiệu dụng {effective_trainable/1e6:.2f}M")
+    print(f"Tham số: tổng {total_params/1e6:.1f}M | train {trainable_params/1e6:.2f}M")
 
-    augment = TrainAugment(cfg["augment"] if isinstance(cfg["augment"], dict) else None) if cfg.get("augment") else None
-    train_ds = DonutDataset(train_hf, processor, cfg["max_length"], train=True, augment=augment,
-                            sort_json_key=cfg["sort_json_key"])
+    train_ds = DonutDataset(train_hf, processor, cfg["max_length"], train=True, sort_json_key=cfg["sort_json_key"])
     loader = DataLoader(
         train_ds,
         batch_size=cfg["batch_size"],
@@ -275,7 +218,8 @@ def main():
     scaler = make_scaler(fp16)
     autocast = torch.autocast("cuda", dtype=torch.float16, enabled=fp16)
 
-    state = dict(epoch=0, global_step=0, best_ted=-1.0, best_f1=0.0, best_epoch=-1, train_seconds=0.0, peak_vram=0.0)
+    state = dict(epoch=0, global_step=0, best_ted=-1.0, best_f1=0.0, best_ned=float("inf"), best_epoch=-1,
+                 train_seconds=0.0, peak_vram=0.0)
 
     # ---- resume
     if cfg["resume"] and os.path.exists(last_path):
@@ -303,29 +247,54 @@ def main():
         running, n_batches = 0.0, 0
         optimizer.zero_grad(set_to_none=True)
         pbar = tqdm(loader, desc=f"epoch {epoch + 1}/{cfg['epochs']}")
-        for i, batch in enumerate(pbar):
-            pixel_values = batch["pixel_values"].to(device, non_blocking=True)
-            labels = batch["labels"].to(device, non_blocking=True)
-            with autocast:
-                loss = seq2seq_loss(model, pixel_values, labels, pad_id, start_id)
-            scaler.scale(loss / grad_accum).backward()
-            running += loss.item()
-            n_batches += 1
+        token_mode = cfg["loss_reduction"] == "token"
+        loss_sum, tok_sum = 0.0, 0
+        window = []
 
-            if (i + 1) % grad_accum == 0 or (i + 1) == len(loader):
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(params, cfg["max_grad_norm"])
-                scaler.step(optimizer)
-                scaler.update()
-                optimizer.zero_grad(set_to_none=True)
-                scheduler.step()
-                state["global_step"] += 1
-                if state["global_step"] % cfg["log_every"] == 0:
-                    utils.append_csv(steps_csv, {
-                        "global_step": state["global_step"], "epoch": epoch + 1,
-                        "loss": round(running / n_batches, 5), "lr": scheduler.get_last_lr()[0],
-                    })
-            pbar.set_postfix(loss=f"{running / n_batches:.4f}", lr=f"{scheduler.get_last_lr()[0]:.2e}")
+        def optimizer_step():
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(params, cfg["max_grad_norm"])
+            scaler.step(optimizer)
+            scaler.update()
+            optimizer.zero_grad(set_to_none=True)
+            scheduler.step()
+            state["global_step"] += 1
+            if state["global_step"] % cfg["log_every"] == 0:
+                utils.append_csv(steps_csv, {
+                    "global_step": state["global_step"], "epoch": epoch + 1,
+                    "loss": round(running / max(n_batches, 1), 5), "lr": scheduler.get_last_lr()[0],
+                })
+
+        for i, batch in enumerate(pbar):
+            if token_mode:
+                # Gom đủ grad_accum micro-batch rồi chia loss cho TỔNG số token của cả cửa sổ
+                # -> gradient giống hệt một batch thật kích thước batch_size*grad_accum (CrossEntropy mean).
+                window.append(batch)
+                if len(window) < grad_accum and (i + 1) != len(loader):
+                    continue
+                n_tok = sum(int((b["labels"] != -100).sum()) for b in window)
+                for b in window:
+                    pixel_values = b["pixel_values"].to(device, non_blocking=True)
+                    labels = b["labels"].to(device, non_blocking=True)
+                    with autocast:
+                        l_sum = seq2seq_loss(model, pixel_values, labels, pad_id, start_id, reduction="sum")
+                    scaler.scale(l_sum / n_tok).backward()
+                    loss_sum += l_sum.item()
+                tok_sum += n_tok
+                running, n_batches = loss_sum / max(tok_sum, 1), 1
+                window = []
+                optimizer_step()
+            else:
+                pixel_values = batch["pixel_values"].to(device, non_blocking=True)
+                labels = batch["labels"].to(device, non_blocking=True)
+                with autocast:
+                    loss = seq2seq_loss(model, pixel_values, labels, pad_id, start_id)
+                scaler.scale(loss / grad_accum).backward()
+                running += loss.item()
+                n_batches += 1
+                if (i + 1) % grad_accum == 0 or (i + 1) == len(loader):
+                    optimizer_step()
+            pbar.set_postfix(loss=f"{running / max(n_batches, 1):.4f}", lr=f"{scheduler.get_last_lr()[0]:.2e}")
 
         epoch_time = time.time() - t0
         state["train_seconds"] += epoch_time
@@ -337,19 +306,20 @@ def main():
                "lr": scheduler.get_last_lr()[0], "epoch_seconds": round(epoch_time, 1), "peak_vram_gb": epoch_vram}
         if (epoch + 1) % cfg["val_every"] == 0 or (epoch + 1) == cfg["epochs"]:
             val, _ = evaluate_dataset(
-                gen_model, processor, val_hf, cfg["task_token"], cfg["max_length"], num_beams=1,
+                model, processor, val_hf, cfg["task_token"], cfg["max_length"], num_beams=1,
                 batch_size=cfg["val_batch_size"], limit=cfg["val_limit"], amp=fp16, desc="val",
             )
-            row.update({"val_f1": val["f1"], "val_ted_acc": val["ted_acc"]})
+            row.update({"val_f1": val["f1"], "val_ted_acc": val["ted_acc"], "val_ned": val["ned"]})
             print(f"[epoch {epoch + 1}] loss={row['train_loss']:.4f} val F1={val['f1']:.4f} "
-                  f"TED={val['ted_acc']:.4f} ({epoch_time / 60:.1f} phút, VRAM {epoch_vram} GB)")
-            if val["ted_acc"] > state["best_ted"]:
-                state.update(best_ted=val["ted_acc"], best_f1=val["f1"], best_epoch=epoch + 1)
-                if lora_cfg:
-                    atomic_save(trainable_state(model), os.path.join(out_dir, "best_trainable.pt"))
-                else:
-                    model.save_pretrained(best_dir)
-                    processor.save_pretrained(best_dir)
+                  f"TED={val['ted_acc']:.4f} NED={val['ned']:.4f} ({epoch_time / 60:.1f} phút, VRAM {epoch_vram} GB)")
+            if cfg["select_metric"] == "ned":
+                improved = val["ned"] < state.get("best_ned", float("inf"))
+            else:
+                improved = val["ted_acc"] > state["best_ted"]
+            if improved:
+                state.update(best_ted=val["ted_acc"], best_f1=val["f1"], best_ned=val["ned"], best_epoch=epoch + 1)
+                model.save_pretrained(best_dir)
+                processor.save_pretrained(best_dir)
                 print(f"   -> checkpoint tốt nhất mới (epoch {epoch + 1})")
         utils.append_csv(history_csv, row)
 
@@ -368,16 +338,6 @@ def main():
             ckpt.update(optimizer=optimizer.state_dict(), scheduler=scheduler.state_dict(), scaler=scaler.state_dict())
         atomic_save(ckpt, last_path)
 
-    # ---- hoàn tất: LoRA -> merge adapter tốt nhất vào model và lưu dạng HF
-    if lora_cfg and not os.path.exists(os.path.join(best_dir, "config.json")):
-        best_path = os.path.join(out_dir, "best_trainable.pt")
-        if os.path.exists(best_path):
-            model.load_state_dict(torch_load(best_path), strict=False)
-        merged = model.merge_and_unload()
-        merged.save_pretrained(best_dir)
-        processor.save_pretrained(best_dir)
-        print(f"Đã merge LoRA và lưu {best_dir}")
-
     n_epochs = max(state["epoch"], 1)
     summary = {
         "id": cfg["run_id"],
@@ -387,13 +347,16 @@ def main():
         "input_size": utils.size_str(cfg["input_size"]),
         "epochs": state["epoch"],
         "trainable_params_M": round(trainable_params / 1e6, 2),
-        "effective_trainable_params_M": round(effective_trainable / 1e6, 2),
         "peak_vram_gb": state["peak_vram"],
         "train_hours": round(state["train_seconds"] / 3600, 2),
         "sec_per_epoch": round(state["train_seconds"] / n_epochs, 1),
         "best_epoch": state["best_epoch"],
         "val_f1": state["best_f1"],
         "val_ted_acc": state["best_ted"],
+        "val_ned": state.get("best_ned"),
+        "select_metric": cfg["select_metric"],
+        "image_norm": cfg["image_norm"],
+        "loss_reduction": cfg["loss_reduction"],
         "gpu": utils.gpu_name(),
         "time": utils.now_str(),
         "notes": cfg.get("notes", ""),

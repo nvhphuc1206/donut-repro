@@ -1,7 +1,7 @@
-"""Task 2.3 – Phân tích lỗi từ file dự đoán của evaluate.py.
+"""Phân tích lỗi từ file dự đoán của evaluate.py.
 
-    python -m src.error_analysis --pred results/p1_official_cord.json --top_k 10 --save_images
-Output: results/error_analysis.md, results/error_analysis.csv, results/errors/*.png|json
+    python -m src.error_analysis --pred results/reproduce/official_hfnorm_fp32.json --top_k 10 --save_images
+Output: results/analysis/error_analysis.md, error_analysis.csv, errors/*.png|json
 """
 import argparse
 import os
@@ -55,12 +55,12 @@ def analyse(rec):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pred", default="results/p1_official_cord.json")
+    ap.add_argument("--pred", default="results/reproduce/official_hfnorm_fp32.json")
     ap.add_argument("--top_k", type=int, default=10)
-    ap.add_argument("--out_md", default="results/error_analysis.md")
-    ap.add_argument("--out_csv", default="results/error_analysis.csv")
+    ap.add_argument("--out_md", default="results/analysis/error_analysis.md")
+    ap.add_argument("--out_csv", default="results/analysis/error_analysis.csv")
     ap.add_argument("--save_images", action="store_true", help="Lưu ảnh + gt/pred của top_k mẫu tệ nhất")
-    ap.add_argument("--images_dir", default="results/errors")
+    ap.add_argument("--images_dir", default="results/analysis/errors")
     args = ap.parse_args()
     utils.start_log("results/logs/error_analysis.log")
 

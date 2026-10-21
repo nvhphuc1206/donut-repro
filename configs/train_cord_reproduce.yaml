@@ -1,0 +1,38 @@
+# Tái lập công thức fine-tune Donut trên CORD-v2 của repo gốc clovaai/donut
+# (config/train_cord.yaml + lightning_module.py + donut/model.py), chạy trên 1 GPU 8 GB.
+# [GỐC] = giá trị tương ứng trong code gốc.
+#   python -m src.train --config configs/train_cord_reproduce.yaml
+# Kết quả đã chạy: outputs/donut_cord_reproduce/ (lúc train run_id tên là "B0_official_recipe").
+run_id: donut_cord_reproduce
+model_name_or_path: naver-clova-ix/donut-base
+dataset: naver-clova-ix/cord-v2
+task_token: "<s_cord-v2>"
+input_size: [1280, 960]        # [GỐC] input_size: [1280, 960]
+align_long_axis: false         # [GỐC] align_long_axis: False
+max_length: 768                # [GỐC] max_length: 768
+sort_json_key: false           # [GỐC] sort_json_key: False
+image_norm: imagenet           # [GỐC] SwinEncoder.to_tensor: Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
+
+epochs: 30                     # [GỐC] max_epochs: 30
+batch_size: 1
+grad_accum: 8                  # batch hiệu dụng 8 = [GỐC] train_batch_sizes: [8] (8 GB VRAM không chứa nổi batch 8 thật)
+loss_reduction: token          # [GỐC] CrossEntropy trung bình theo token trên cả batch 8
+lr: 3.0e-5                     # [GỐC] lr: 3e-5, optimizer Adam (AdamW với weight_decay=0 là tương đương)
+weight_decay: 0.0
+warmup_steps: 300              # [GỐC] warmup_steps: 300 = 10% của 3000 bước
+scheduler: cosine              # [GỐC] cosine_scheduler (cùng công thức với get_cosine_schedule_with_warmup)
+max_grad_norm: 1.0             # [GỐC] gradient_clip_val: 1.0
+fp16: true                     # [GỐC] precision: 16
+gradient_checkpointing: true   # chỉ tiết kiệm bộ nhớ, không đổi kết quả toán học
+num_workers: 2
+seed: 2022                     # [GỐC] seed: 2022
+
+val_every: 3                   # [GỐC] check_val_every_n_epoch: 3
+val_batch_size: 1              # [GỐC] val_batch_sizes: [1]
+val_limit: null
+select_metric: ned             # [GỐC] ModelCheckpoint(monitor="val_metric" = normalized edit distance, mode="min")
+
+output_dir: outputs/donut_cord_reproduce
+resume: true
+save_optimizer: true
+notes: "official recipe: 30ep, imagenet norm, token-mean loss bs8, val/3ep, select by NED, seed 2022"

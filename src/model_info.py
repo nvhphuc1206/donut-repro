@@ -1,7 +1,7 @@
-"""Task 2.1 – In kích thước tensor thực tế + số tham số, vẽ sơ đồ kiến trúc có số liệu.
+"""Phân tích – in kích thước tensor thực tế + số tham số, vẽ sơ đồ kiến trúc có số liệu.
 
     python -m src.model_info --model naver-clova-ix/donut-base-finetuned-cord-v2
-Output: results/model_info.json, results/architecture.mmd (Mermaid), results/figures/architecture.png
+Output: results/analysis/model_info.json, architecture.mmd (Mermaid), architecture.png
 """
 import argparse
 import os
@@ -79,7 +79,7 @@ def main():
     ap.add_argument("--split", default="test")
     ap.add_argument("--input_size", type=int, nargs=2, metavar=("H", "W"))
     ap.add_argument("--device", default="cuda")
-    ap.add_argument("--out_dir", default="results")
+    ap.add_argument("--out_dir", default="results/analysis")
     args = ap.parse_args()
     utils.start_log("results/logs/model_info.log")
 
@@ -128,8 +128,8 @@ def main():
     utils.save_json(info, os.path.join(args.out_dir, "model_info.json"))
     with open(os.path.join(args.out_dir, "architecture.mmd"), "w", encoding="utf-8") as f:
         f.write(mermaid(info))
-    draw_architecture(info, os.path.join(args.out_dir, "figures", "architecture.png"))
-    print(f"\nĐã lưu {args.out_dir}/model_info.json, architecture.mmd, figures/architecture.png")
+    draw_architecture(info, os.path.join(args.out_dir, "architecture.png"))
+    print(f"\nĐã lưu {args.out_dir}/model_info.json, architecture.mmd, architecture.png")
 
 
 if __name__ == "__main__":
